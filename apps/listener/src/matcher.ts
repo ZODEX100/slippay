@@ -1,5 +1,6 @@
 import { NETWORK, USDC_ASSET_CODE, stellarToStroops, stroopsToStellar } from "@slippay/shared";
 
+
 export interface StellarPaymentEvent {
   memo_type: string;
   memo_b64: string;
@@ -64,8 +65,9 @@ export function matchPaymentToOrder(
   ) {
     return { outcome: "ignore", reason: "fee_bp_invalid" };
   }
-  // Floor division here is conservative: integer division truncates toward
-  // zero, so the merchant receives at most the mathematically correct amount.
+  // Fee arithmetic and rounding specification: see docs/fees.md.
+  // Integer division truncates toward zero; fractional dust remainder
+  // accrues to the merchant, ensuring net + fee == gross and no overcharging.
   const expectedStroops = (totalStroops * BigInt(10_000 - order.platform_fee_bp)) / 10_000n;
   const expectedMerchantShare = stroopsToStellar(expectedStroops);
   if (receivedStroops >= expectedStroops) return { outcome: "paid" };
@@ -73,3 +75,4 @@ export function matchPaymentToOrder(
 }
 
 export { stellarToStroops, stroopsToStellar };
+
